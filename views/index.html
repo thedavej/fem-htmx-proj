@@ -1,0 +1,94 @@
+{{ block "index" . }}
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      src="https://unpkg.com/htmx.org@1.9.11"
+      integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0"
+      crossorigin="anonymous"
+    ></script>
+    <link rel="stylesheet" src="/css/index.css" />
+  </head>
+  <body>
+    {{ template "create-contact" .Form }}
+    <hr />
+    {{ template "contacts" .Data }}
+
+    <script type="text/javascript">
+      document.addEventListener("DOMContentLoaded", (event) => {
+        document.addEventListener("htmx:beforeSwap", (evt) => {
+          if (evt.detail.xhr.status === 422) {
+            evt.detail.shouldSwap = true;
+            evt.detail.isError = false;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
+{{ end }} {{ block "create-contact" . }}
+<form hx-post="/contacts" hx-swap="outerHTML">
+  <label for="name">Name</label>
+  <input
+    type="text"
+    id="name"
+    name="name"
+    {{
+    if
+    .Values.name
+    }}
+    value="{{ .Values.name }}"
+    {{
+    end
+    }}
+  />
+
+  <label for="email">Email</label>
+  <input
+    type="email"
+    name="email"
+    {{
+    if
+    .Values.email
+    }}
+    value="{{ .Values.email }}"
+    {{
+    end
+    }}
+  />
+
+  {{ if .Errors.email }}
+  <div style="color: red">{{ .Errors.email }}</div>
+  {{ end }}
+
+  <button type="submit">Create</button>
+</form>
+{{ end }} {{ block "contacts" . }}
+<div id="contacts" style="display: flex; flex-direction: column">
+  {{ range .Contacts }} {{ template "contact" . }} {{ end }}
+</div>
+{{ end }} {{ block "contact" . }}
+<div id="contact-{{ .Id }}" class="contact" style="display: flex; gap: 1rem">
+  <button
+    type="button"
+    hx-indicator="#ci-{{ .Id }}"
+    hx-delete="/contacts/{{ .Id }}"
+    hx-target="#contact-{{ .Id }}"
+    hx-swap="outerHTML swap:500ms"
+  >
+    Delete
+  </button>
+  <span>Name: {{ .Name }}</span>
+  <span>Email: <>{{ .Email }}</span>
+
+  <div id="ci-{{ .Id }}" class="htmx-indicator">
+      <img src="/images/bars.svg" alt="loading" style="width: 1rem" />
+  </div>
+</div>
+{{ end }}
+
+{{ block "oob-contact" . }}
+<div id="contacts" hx-swap-oob="afterbegin">{{ template "contact" . }}</div>
+{{ end }}
